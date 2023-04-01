@@ -1,0 +1,15 @@
+# Directories
+node_modules/
+dist/
+coverage/
+logs/
+temp/
+public/uploads/
+.idea/
+
+# Files
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
