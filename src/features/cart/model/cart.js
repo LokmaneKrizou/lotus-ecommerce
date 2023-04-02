@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const ColorSchema = require('./color')
+const ColorSchema = require('../../../common/model/color')
 
 const cartSchema = new mongoose.Schema({
     user: {
@@ -7,7 +7,7 @@ const cartSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    products: [{
+    items: [{
         product: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product',

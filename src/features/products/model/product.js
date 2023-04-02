@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Category = require('../enums/category');
-const ColorSchema = require('./color');
+const ColorSchema = require('../../../common/model/color');
 
 const productSchema = new mongoose.Schema({
     title: {
@@ -11,7 +11,7 @@ const productSchema = new mongoose.Schema({
     description: {
         type: String,
         required: true,
-        maxlength: 1000
+        maxlength: 3000
     },
     category: {
         type: String,

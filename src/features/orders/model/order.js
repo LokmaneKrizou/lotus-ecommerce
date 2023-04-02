@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const Status = require('../enums/status');
-const ColorSchema=require('./color')
+const Status = require('../../cart/enums/status');
+const ColorSchema=require('../../../common/model/color')
 
 const orderSchema = new mongoose.Schema({
     user: {

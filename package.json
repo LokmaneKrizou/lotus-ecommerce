@@ -4,8 +4,8 @@
   "description": "An e-commerce website for selling baby and kids clothes",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production node index.js",
-    "dev": "NODE_ENV=development nodemon index.js",
+    "start": "NODE_ENV=production node src/server.js",
+    "dev": "NODE_ENV=development nodemon src/server.js",
     "test": "NODE_ENV=test jest"
   },
   "author": "Lokmane Krizou",
@@ -13,10 +13,14 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
+    "compression": "^1.7.4",
+    "dotenv": "^16.0.3",
     "enumify": "^1.0.4",
     "express": "^4.17.1",
+    "helmet": "^6.0.1",
     "jsonwebtoken": "^9.0.0",
-    "mongoose": "^6.2.2"
+    "mongoose": "^6.2.2",
+    "redis": "^4.6.5"
   },
   "devDependencies": {
     "chai": "^4.3.4",

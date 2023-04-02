@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Role = require('../enums/role');
-
+const AddressSchema = require('./address');
 const userSchema = new mongoose.Schema({
     firstName: {
         type: String,
@@ -34,8 +34,7 @@ const userSchema = new mongoose.Schema({
         maxlength: 15
     },
     address: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Address',
+        type: AddressSchema,
         required: true
     },
     role: {
