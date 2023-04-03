@@ -5,6 +5,7 @@ const compression = require('compression');
 const morgan = require('morgan');
 const userRoutes = require('./features/users/routes/userRoutes');
 const authRoutes = require('./features/users/routes/authRoutes');
+const productRoutes = require('./features/products/routes/productRoutes');
 const dbConnection = require("./database");
 const validateRequestBody = require('./middleware/validateRequestBodyMiddleware')
 const dotenv = require("dotenv");
@@ -26,6 +27,7 @@ app.post('*', validateRequestBody);
 // Routes
 app.use('/users', userRoutes);
 app.use('/auth', authRoutes);
+app.use('/products', productRoutes);
 
 // Error handling middleware
 app.use((err, res) => {

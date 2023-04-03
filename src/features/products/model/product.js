@@ -37,8 +37,10 @@ const productSchema = new mongoose.Schema({
         },
         image: {
             type: String
-        }
-    }],
+        },
+        _id: false
+    }
+    ],
     sizes: {
         type: [String]
     },
@@ -55,13 +57,14 @@ const productSchema = new mongoose.Schema({
                 required: true
             }
         }],
+        _id: false,
         unique: true, // set a unique index on the `size` field
     },
     totalQuantity: {
         type: Number,
         min: 1
     }
-});
+},{versionKey: false,});
 
 function colorsLimit(val) {
     return val.length <= 5;

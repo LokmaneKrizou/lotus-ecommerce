@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
 const ColorSchema = new mongoose.Schema({
     name: {
@@ -10,5 +10,8 @@ const ColorSchema = new mongoose.Schema({
         type: String,
         required: true
     }
+}, {
+    versionKey: false,
+    _id: false
 });
 module.exports = ColorSchema;

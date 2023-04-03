@@ -31,10 +31,7 @@ class ProductController {
 
     async updateProduct(req, res, next) {
         try {
-            const {title, description, price, images, category} = req.body
-            if (!title || !price || !description || !images || !category) {
-                throw new InvalidProductBodyException('Product name, price, images, category and description cannot be empty.');
-            }
+
             const productId = req.params.productId
             if (!productId) {
                 throw new InvalidProductBodyException('Product ID param is not passed correctly.');
@@ -62,8 +59,9 @@ class ProductController {
     async searchProducts(req, res, next) {
         try {
             const {query, cursor, limit} = req.query;
-            const queryObject = query ? {name: {$regex: new RegExp(query, 'i')}} : {};
-            const products = await productRepository.searchProducts(queryObject, base64ToString(cursor), parseInt(limit));
+            const queryObject = query ? {title: {$regex: new RegExp(`\\b${query}\\b`, 'i')}} : {};
+            const decodedCursor =cursor? base64ToString(cursor) :null
+            const products = await productRepository.searchProducts(queryObject, decodedCursor, parseInt(limit));
             const hasNextPage = products.length > limit;
             if (hasNextPage) {
                 products.pop();
@@ -72,7 +70,7 @@ class ProductController {
             res.status(200).json({
                 products,
                 pageInfo: {
-                    endCursor: endCursor.toString(),
+                    endCursor: endCursor,
                     hasNextPage,
                 },
             });
@@ -84,7 +82,8 @@ class ProductController {
     async getAllProducts(req, res, next) {
         try {
             const {cursor, limit} = req.query;
-            const products = await productRepository.getAllProducts(base64ToString(cursor), parseInt(limit));
+            const decodedCursor =cursor? base64ToString(cursor) :null
+            const products = await productRepository.searchProducts({},decodedCursor, parseInt(limit));
             const hasNextPage = products.length > limit;
             if (hasNextPage) {
                 products.pop();
@@ -93,7 +92,7 @@ class ProductController {
             res.status(200).json({
                 products,
                 pageInfo: {
-                    endCursor: endCursor.toString(),
+                    endCursor: endCursor,
                     hasNextPage,
                 },
             });

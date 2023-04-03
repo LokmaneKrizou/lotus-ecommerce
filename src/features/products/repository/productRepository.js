@@ -42,14 +42,10 @@ class ProductRepository {
     }
 
     async searchProducts(query, cursor, limit) {
-        return Product.find({...query, _id: {$lt: cursor}})
-            .sort({_id: -1})
-            .limit(limit + 1);
-    }
-
-    async getAllProducts(cursor, limit) {
-        return Product.find({_id: {$lt: cursor}})
-            .sort({_id: -1})
+        if (cursor) {
+            query['_id'] = {'$gt': cursor}
+        }
+        return Product.find({...query})
             .limit(limit + 1);
     }
 }
