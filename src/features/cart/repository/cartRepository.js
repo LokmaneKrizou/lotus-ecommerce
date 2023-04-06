@@ -1,51 +1,68 @@
-const { CartNotFoundException, InvalidCartBodyException } = require("../exceptions");
+const {CartNotFoundException, CartAlreadyExistsForUserException, InvalidCartBodyException} = require("../exceptions");
 const Cart = require("../model/cart");
 
 class CartRepository {
-    async createOrUpdateCart(userId, cartData) {
+
+    async createCart(userId, cartData) {
         try {
-            const existingCart = await Cart.findOne({ user: userId });
-
-            if (existingCart) {
-                existingCart.items = cartData.items;
-                existingCart.total = cartData.total;
-
-                return await existingCart.save();
-            } else {
-                const cart = new Cart({
-                    user: userId,
-                    items: cartData.items,
-                    total: cartData.total,
-                });
-
-                return await cart.save();
+            return await Cart.create({
+                user: userId,
+                items: cartData.items,
+                total: cartData.total,
+            });
+        } catch (err) {
+            if (err.code === 11000) {
+                throw new CartAlreadyExistsForUserException();
             }
+            throw new InvalidCartBodyException(err.message);
+        }
+    }
+
+    async updateCart(cartId, cartData) {
+        try {
+            const updatedCart = await Cart.findByIdAndUpdate(cartId, cartData, {new: true});
+            if (!updatedCart) {
+                throw new CartNotFoundException(userId);
+            }
+            return updatedCart;
         } catch (err) {
             throw new InvalidCartBodyException(err.message);
         }
     }
 
     async getCartByUserId(userId) {
-        const cart = await Cart.findOne({ user: userId }).populate({
-            path: "items.product",
-            model: "Product",
-        });
-
-        if (!cart) {
-            throw new CartNotFoundException(userId);
+        try {
+            const cart = await Cart.findOne({user: userId}).populate({
+                path: "items.product",
+                model: "Product",
+            });
+            if (!cart) {
+                throw new CartNotFoundException(userId);
+            }
+            return cart;
+        } catch (err) {
+            throw err
         }
-
-        return cart;
     }
 
-    async deleteCart(userId) {
-        const deletedCart = await Cart.findOneAndDelete({ user: userId });
-
+    async deleteCart(cartId) {
+        const deletedCart = await Cart.findByIdAndDelete(cartId);
         if (!deletedCart) {
-            throw new CartNotFoundException(userId);
+            throw new CartNotFoundException(cartId);
         }
-
         return deletedCart;
+    }
+
+    async searchCarts(query, cursor, limit) {
+        if (cursor) {
+            query['_id'] = {'$gt': cursor}
+        }
+        return Cart.find({...query}).populate('user')
+            .populate({
+                path: "items.product",
+                model: "Product",
+            })
+            .limit(limit + 1);
     }
 }
 

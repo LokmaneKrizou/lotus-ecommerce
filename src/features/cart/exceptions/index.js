@@ -6,6 +6,14 @@ class CartNotFoundException extends Error {
     }
 }
 
+class CartAlreadyExistsForUserException extends Error {
+    constructor() {
+        super(`You have abandoned cart already, something went wrong.`);
+        this.name = "CartAlreadyExistsForUserException";
+        this.status = 409;
+    }
+}
+
 class InvalidCartBodyException extends Error {
     constructor(message) {
         super(message);
@@ -17,4 +25,5 @@ class InvalidCartBodyException extends Error {
 module.exports = {
     CartNotFoundException,
     InvalidCartBodyException,
+    CartAlreadyExistsForUserException
 };

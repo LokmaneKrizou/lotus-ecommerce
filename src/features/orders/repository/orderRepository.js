@@ -22,15 +22,19 @@ class OrderRepository {
     }
 
     async updateOrder(orderId, updatedOrder) {
-        const order = await Order.findByIdAndUpdate(
-            orderId,
-            updatedOrder,
-            {new: true}
-        );
-        if (!order) {
-            throw new OrderNotFoundException(orderId);
+        try {
+            const order = await Order.findByIdAndUpdate(
+                orderId,
+                updatedOrder,
+                {new: true}
+            );
+            if (!order) {
+                throw new InvalidOrderBodyException("Order failed to update");
+            }
+            return order;
+        }catch (err) {
+            throw err;
         }
-        return order;
     }
 
     async deleteOrder(orderId) {

@@ -1,5 +1,6 @@
 const orderRepository = require("../repository/orderRepository");
 const {InvalidOrderBodyException} = require("../exceptions");
+const {base64ToString, stringToBase64} = require("../../../common/utils/base64");
 
 class OrderController {
     async createOrder(req, res, next) {
@@ -79,7 +80,7 @@ class OrderController {
 
     async getOrdersByUserId(req, res, next) {
         try {
-            const userId = req.params.userId;
+            const userId = req.params.userId?req.params.userId:req.userId;
             if (!userId) {
                 throw new InvalidOrderBodyException(
                     "User ID param is not passed correctly."
@@ -105,8 +106,20 @@ class OrderController {
     async searchOrders(req, res, next) {
         try {
             const {query, cursor, limit} = req.query;
-            const orders = await orderRepository.searchOrders(query ? query : {}, cursor, limit);
-            res.status(200).json({success: true, data: orders});
+            const decodedCursor = cursor ? base64ToString(cursor) : null
+            const orders = await orderRepository.searchOrders(query ? query : {}, decodedCursor, limit);
+            const hasNextPage = orders.length > limit;
+            if (hasNextPage) {
+                orders.pop();
+            }
+            const endCursor = hasNextPage ? stringToBase64(orders[orders.length - 1]._id) : null;
+            res.status(200).json({
+                orders,
+                pageInfo: {
+                    endCursor: endCursor,
+                    hasNextPage,
+                },
+            });
         } catch (err) {
             next(err);
         }
