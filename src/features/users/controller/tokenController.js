@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const TokenRepository = require('../repository/tokenRepository');
-const UserRepository = require('../repository/userRepository');
-const {InternalServerException, UnauthorizedException} = require('../../../common/exceptions');
+const {BadRequestException} = require('../../../common/exceptions');
 
 class TokenController {
     async generateTokens(userId) {
@@ -16,18 +15,18 @@ class TokenController {
 
     async refreshToken(req, res, next) {
         try {
-            const userId = req.userId
-            const {refreshToken} = req.body
-            const tokenExists = await TokenRepository.validateRefreshToken(userId, refreshToken);
-            if (!tokenExists) {
-                throw new UnauthorizedException("Invalid Request, please login again");
+            const {refreshToken, grantType} = req.body
+            if (grantType === "refresh_token" && refreshToken != null && refreshToken !== "") {
+                const userId = await TokenRepository.validateRefreshToken(refreshToken);
+                const accessToken = await TokenRepository.generateAccessToken(userId);
+                const newRefreshToken = await TokenRepository.generateRefreshToken(userId);
+                res.json({accessToken, refreshToken: newRefreshToken});
+            } else {
+                throw new BadRequestException('"Login failed, invalid credentials')
             }
-            const accessToken = await TokenRepository.generateAccessToken(userId);
-            const newRefreshToken = await TokenRepository.generateRefreshToken(userId);
-            res.json({accessToken, refreshToken: newRefreshToken});
         } catch (err) {
             if (err instanceof jwt.TokenExpiredError) {
-                next(new UnauthorizedException('Expired refresh token'));
+                next(new BadRequestException("Login failed, invalid credentials"));
             } else {
                 next(err);
             }

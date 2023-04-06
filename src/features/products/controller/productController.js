@@ -1,6 +1,7 @@
 const productRepository = require('../repository/productRepository');
 const {stringToBase64, base64ToString} = require('../../../common/utils/base64')
 const {InvalidProductBodyException} = require("../exceptions");
+const Category = require("../enums/category");
 
 class ProductController {
     async createProduct(req, res, next) {
@@ -60,7 +61,7 @@ class ProductController {
         try {
             const {query, cursor, limit} = req.query;
             const queryObject = query ? {title: {$regex: new RegExp(`\\b${query}\\b`, 'i')}} : {};
-            const decodedCursor =cursor? base64ToString(cursor) :null
+            const decodedCursor = cursor ? base64ToString(cursor) : null
             const products = await productRepository.searchProducts(queryObject, decodedCursor, parseInt(limit));
             const hasNextPage = products.length > limit;
             if (hasNextPage) {
@@ -82,8 +83,8 @@ class ProductController {
     async getAllProducts(req, res, next) {
         try {
             const {cursor, limit} = req.query;
-            const decodedCursor =cursor? base64ToString(cursor) :null
-            const products = await productRepository.searchProducts({},decodedCursor, parseInt(limit));
+            const decodedCursor = cursor ? base64ToString(cursor) : null
+            const products = await productRepository.searchProducts({}, decodedCursor, parseInt(limit));
             const hasNextPage = products.length > limit;
             if (hasNextPage) {
                 products.pop();
@@ -98,6 +99,17 @@ class ProductController {
             });
         } catch (err) {
             next(err);
+        }
+    }
+
+    async getCategories(req, res, next) {
+        try {
+            const categoryList = Object.values(Category);
+            res.status(200).json({
+                categories: categoryList
+            })
+        } catch (err) {
+            next(err)
         }
     }
 }

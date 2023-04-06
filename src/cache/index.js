@@ -21,22 +21,21 @@ const redisClient = async () => {
     return client;
 }
 
-const getCachedTokenFor =async (key) => {
-        const client = await redisClient()
-        await client.get(key, (err, data) => {
-            if (err) {
-                console.log("error thrown")
-                throw err
-            } else {
-                if (data !== null) {
-                    console.log("token found")
-                    return JSON.parse(data).token;
-                } else {
-                    console.log("no token")
-                    return null;
-                }
-            }
-        });
+const getCachedTokenFor = async (key) => {
+    try {
+        const client = await redisClient();
+        const data = await client.get(key);
+        if (data !== null) {
+            console.log("token found");
+            return JSON.parse(data).token;
+        } else {
+            console.log("no token");
+            return null;
+        }
+    } catch (err) {
+        console.log("error thrown");
+        throw err;
+    }
 }
 module.exports = {
     redisClient,

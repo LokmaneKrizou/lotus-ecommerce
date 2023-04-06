@@ -42,26 +42,24 @@ class OrderRepository {
     }
 
     async getOrdersByUserId(userId) {
-        return Order.find({userId}).sort({createdAt: -1});
+        return Order.find({ user: userId })
+            .populate('user')
+            .populate({
+                path: 'products.product',
+                model: 'Product'
+            }).sort({createdAt: -1});
     }
 
-    async getOrdersByStatus(status, cursor, limit) {
-        const queryObject = status ? {status} : {};
-        const orders = await Order.find({...queryObject, _id: {$lt: cursor}})
-            .sort({_id: -1})
-            .limit(limit + 1);
-        const hasNextPage = orders.length > limit;
-        if (hasNextPage) {
-            orders.pop();
+    async searchOrders(query, cursor, limit) {
+        if (cursor) {
+            query['_id'] = {'$gt': cursor}
         }
-        const endCursor = hasNextPage ? orders[orders.length - 1]._id : null;
-        return {
-            orders,
-            pageInfo: {
-                endCursor: endCursor?.toString(),
-                hasNextPage,
-            },
-        };
+        return Order.find({...query}).populate('user')
+            .populate({
+                path: 'products.product',
+                model: 'Product'
+            })
+            .limit(limit + 1);
     }
 }
 

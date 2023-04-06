@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
 const {redisClient, getCachedTokenFor} = require('../../../cache');
-const {UnauthorizedException, InternalServerException} = require('../../../common/exceptions');
+const {UnauthorizedException,BadRequestException, InternalServerException} = require('../../../common/exceptions');
 
 const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION || '7 days';
 const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION || '1h';
-
+const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET_KEY || "test key"
 class TokenRepository {
     async generateAccessToken(userId) {
         try {
@@ -19,10 +19,9 @@ class TokenRepository {
 
     async generateRefreshToken(userId) {
         try {
-            const refreshSecret = process.env.JWT_REFRESH_SECRET_KEY || "test key"
             const payload = {sub: userId}
             const options = {expiresIn: REFRESH_TOKEN_EXPIRATION}
-            const refreshToken = jwt.sign(payload, refreshSecret, options);
+            const refreshToken = jwt.sign(payload, REFRESH_TOKEN_SECRET, options);
             const expireInSeconds = parseInt(REFRESH_TOKEN_EXPIRATION, 10) * 24 * 60 * 60;
             const jsonValue = JSON.stringify({token: refreshToken})
             const client = await redisClient()
@@ -33,12 +32,15 @@ class TokenRepository {
         }
     }
 
-    async validateRefreshToken(userId, token) {
+    async validateRefreshToken(token) {
         try {
+            const payload = jwt.verify(token, REFRESH_TOKEN_SECRET)
+            const userId= payload.sub.toString()
             const cachedToken = await getCachedTokenFor(userId);
-            return cachedToken === token;
+            if (token !== cachedToken) throw new BadRequestException("Invalid Request, please login again")
+            return userId
         } catch (err) {
-            throw new UnauthorizedException(err.message);
+            throw new BadRequestException(err.message);
         }
     }
 
