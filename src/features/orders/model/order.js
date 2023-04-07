@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Status = require('../../cart/enums/status');
+const Status = require('../enums/status');
 const ColorSchema=require('../../../common/model/color')
 
 const orderSchema = new mongoose.Schema({
@@ -8,7 +8,7 @@ const orderSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    products: [{
+    items: [{
         product: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product',

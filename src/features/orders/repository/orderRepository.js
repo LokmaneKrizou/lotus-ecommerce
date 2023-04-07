@@ -3,6 +3,7 @@ const {
     InvalidOrderBodyException,
 } = require("../exceptions");
 const Order = require("../model/order");
+const populateUserWithoutPassword = require("../../../common/utils/populateUserWithoutPassword");
 
 class OrderRepository {
     async createOrder(order) {
@@ -14,7 +15,12 @@ class OrderRepository {
     }
 
     async getOrderById(orderId) {
-        const order = await Order.findById(orderId);
+        const order = await Order.findById(orderId)
+            .populate(populateUserWithoutPassword)
+            .populate({
+                path: "items.product",
+                model: "Product",
+            });
         if (!order) {
             throw new OrderNotFoundException(orderId);
         }
@@ -32,7 +38,7 @@ class OrderRepository {
                 throw new InvalidOrderBodyException("Order failed to update");
             }
             return order;
-        }catch (err) {
+        } catch (err) {
             throw err;
         }
     }
@@ -46,10 +52,10 @@ class OrderRepository {
     }
 
     async getOrdersByUserId(userId) {
-        return Order.find({ user: userId })
-            .populate('user')
+        return Order.find({user: userId})
+            .populate(populateUserWithoutPassword)
             .populate({
-                path: 'products.product',
+                path: 'items.product',
                 model: 'Product'
             }).sort({createdAt: -1});
     }
@@ -58,9 +64,10 @@ class OrderRepository {
         if (cursor) {
             query['_id'] = {'$gt': cursor}
         }
-        return Order.find({...query}).populate('user')
+        return Order.find({...query})
+            .populate(populateUserWithoutPassword)
             .populate({
-                path: 'products.product',
+                path: 'items.product',
                 model: 'Product'
             })
             .limit(limit + 1);

@@ -6,8 +6,8 @@ class OrderController {
     async createOrder(req, res, next) {
         try {
             const userId = req.userId
-            const {products} = req.body;
-            if (!userId || !Array.isArray(products) || products.length === 0) {
+            const {items} = req.body;
+            if (!userId || !Array.isArray(items) || items.length === 0) {
                 throw new InvalidOrderBodyException(
                     "Invalid order body. Order must contain a valid userId and at least one product"
                 );
@@ -78,13 +78,22 @@ class OrderController {
         }
     }
 
-    async getOrdersByUserId(req, res, next) {
+    async getOrdersByUserId({params: {userId}}, res, next) {
         try {
-            const userId = req.params.userId?req.params.userId:req.userId;
             if (!userId) {
-                throw new InvalidOrderBodyException(
-                    "User ID param is not passed correctly."
-                );
+                throw new InvalidOrderBodyException("Missing or invalid user ID.");
+            }
+            const orders = await orderRepository.getOrdersByUserId(userId);
+            res.status(200).json({success: true, data: orders});
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getMyOrder({userId}, res, next) {
+        try {
+            if (!userId) {
+                throw new InvalidOrderBodyException("Missing or invalid user ID.");
             }
             const orders = await orderRepository.getOrdersByUserId(userId);
             res.status(200).json({success: true, data: orders});

@@ -10,7 +10,6 @@ module.exports = async function authMiddleware(req, res, next) {
         }
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET_KEY || 'test key');
         const {sub: userId} = decoded;
-        console.log(userId)
         if (await TokenRepository.isAccessTokenBlacklisted(userId, token)) {
             throw new UnauthorizedException('Invalid access token');
         }

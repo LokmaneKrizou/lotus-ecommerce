@@ -4,6 +4,7 @@ const orderController = require('../controller/orderController');
 const authMiddleware = require('../../../middleware/authMiddleware');
 router.use(authMiddleware)
 router.post('/create', orderController.createOrder);
+router.get('/me', orderController.getMyOrder);
 router.get('/:orderId', orderController.getOrderById);
 router.put('/:orderId', orderController.updateOrder);
 router.delete('/:orderId', orderController.deleteOrder);

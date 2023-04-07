@@ -67,7 +67,6 @@ class TokenRepository {
     async isAccessTokenBlacklisted(userId, accessToken) {
         try {
             const key = `BL${userId}`;
-            console.log(key)
             const cachedToken = await getCachedTokenFor(key);
             return cachedToken === accessToken;
         } catch (err) {

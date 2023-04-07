@@ -26,14 +26,11 @@ const getCachedTokenFor = async (key) => {
         const client = await redisClient();
         const data = await client.get(key);
         if (data !== null) {
-            console.log("token found");
             return JSON.parse(data).token;
         } else {
-            console.log("no token");
             return null;
         }
     } catch (err) {
-        console.log("error thrown");
         throw err;
     }
 }

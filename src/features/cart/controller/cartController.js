@@ -5,13 +5,13 @@ const {BadRequestException} = require("../../../common/exceptions");
 
 class CartController {
     async createCart(req, res, next) {
-        const userId = req.params.userId;
-        const cartData = req.body;
+        const userId = req.userId;
+        const {items} = req.body;
         try {
-            if (!userId || !cartData) {
+            if (!userId || !items) {
                 throw new InvalidCartBodyException("items or total missing in cart body")
             }
-            const cart = await cartRepository.createCart(userId, cartData);
+            const cart = await cartRepository.createCart(userId, items);
             res.status(201).json(cart);
         } catch (err) {
             if (err instanceof CartAlreadyExistsForUserException) {
@@ -28,8 +28,8 @@ class CartController {
         const cartId = req.params.cartId;
         const cartData = req.body;
         try {
-            if (!cartId || !cartData) {
-                throw new InvalidCartBodyException("items or total missing in cart body")
+            if (!cartData) {
+                throw new InvalidCartBodyException("missing cart body")
             }
             const updatedCart = await cartRepository.updateCart(cartId, cartData);
             res.json(updatedCart);
@@ -38,8 +38,7 @@ class CartController {
         }
     }
 
-    async getCartByUserId(req, res, next) {
-        const userId = req.userId;
+    async getMyCart({userId}, res, next) {
         try {
             const cart = await cartRepository.getCartByUserId(userId);
             res.json(cart);
@@ -48,8 +47,28 @@ class CartController {
         }
     }
 
-    async deleteCart(req, res, next) {
-        const cartId = req.params.cartId;
+    async getCartByUserId({params: {userId}}, res, next) {
+        try {
+            const cart = await cartRepository.getCartByUserId(userId);
+            res.json(cart);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getCartById({params: {cartId}}, res, next) {
+        try {
+            if (!cartId) {
+                throw new BadRequestException("we need cart id to perform this action")
+            }
+            const cart = await cartRepository.getCartById(cartId);
+            res.json(cart);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async deleteCart({params: cartId}, res, next) {
         try {
             if (!cartId) {
                 throw new BadRequestException("we need cart id to perform this action")
@@ -61,9 +80,8 @@ class CartController {
         }
     }
 
-    async searchCarts(req, res, next) {
+    async searchCarts({query: {query, cursor, limit}}, res, next) {
         try {
-            const {query, cursor, limit} = req.query;
             const decodedCursor = cursor ? base64ToString(cursor) : null
             const carts = await cartRepository.searchCarts(query ? query : {}, decodedCursor, limit);
             const hasNextPage = carts.length > limit;

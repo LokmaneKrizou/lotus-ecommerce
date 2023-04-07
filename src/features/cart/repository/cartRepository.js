@@ -1,14 +1,14 @@
 const {CartNotFoundException, CartAlreadyExistsForUserException, InvalidCartBodyException} = require("../exceptions");
 const Cart = require("../model/cart");
+const populateUserWithoutPassword = require("../../../common/utils/populateUserWithoutPassword");
 
 class CartRepository {
 
-    async createCart(userId, cartData) {
+    async createCart(userId, cartItems) {
         try {
             return await Cart.create({
                 user: userId,
-                items: cartData.items,
-                total: cartData.total,
+                items: cartItems
             });
         } catch (err) {
             if (err.code === 11000) {
@@ -22,7 +22,7 @@ class CartRepository {
         try {
             const updatedCart = await Cart.findByIdAndUpdate(cartId, cartData, {new: true});
             if (!updatedCart) {
-                throw new CartNotFoundException(userId);
+                throw new CartNotFoundException(cartId);
             }
             return updatedCart;
         } catch (err) {
@@ -32,12 +32,31 @@ class CartRepository {
 
     async getCartByUserId(userId) {
         try {
-            const cart = await Cart.findOne({user: userId}).populate({
-                path: "items.product",
-                model: "Product",
-            });
+            const cart = await Cart.findOne({user: userId})
+                .populate(populateUserWithoutPassword)
+                .populate({
+                    path: "items.product",
+                    model: "Product",
+                });
             if (!cart) {
                 throw new CartNotFoundException(userId);
+            }
+            return cart;
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async getCartById(cartId) {
+        try {
+            const cart = await Cart.findById(cartId)
+                .populate(populateUserWithoutPassword)
+                .populate({
+                    path: "items.product",
+                    model: "Product",
+                });
+            if (!cart) {
+                throw new CartNotFoundException(cartId);
             }
             return cart;
         } catch (err) {
@@ -57,7 +76,8 @@ class CartRepository {
         if (cursor) {
             query['_id'] = {'$gt': cursor}
         }
-        return Cart.find({...query}).populate('user')
+        return Cart.find({...query})
+            .populate(populateUserWithoutPassword)
             .populate({
                 path: "items.product",
                 model: "Product",
