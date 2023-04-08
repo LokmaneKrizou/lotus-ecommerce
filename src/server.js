@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const compression = require('compression');
-const morgan = require('morgan');
 const userRoutes = require('./features/users/routes/userRoutes');
 const authRoutes = require('./features/users/routes/authRoutes');
 const orderRoutes = require('./features/orders/routes/orderRoutes');
@@ -18,7 +17,6 @@ const app = express();
 // Middlewares
 app.use(helmet());
 app.use(compression());
-app.use(morgan('combined'));
 app.use(bodyParser.json());
 // Connect to MongoDb
 dbConnection()
