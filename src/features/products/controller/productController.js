@@ -2,6 +2,7 @@ const productRepository = require('../repository/productRepository');
 const {stringToBase64, base64ToString} = require('../../../common/utils/base64')
 const {InvalidProductBodyException} = require("../exceptions");
 const Category = require("../enums/category");
+const Product = require("../model/product");
 
 class ProductController {
     async createProduct(req, res, next) {
@@ -57,6 +58,15 @@ class ProductController {
         }
     }
 
+    async getMostSearchedProducts({query: {limit}}, res, next) {
+        try {
+            const products = await productRepository.mostSearchedProducts(limit)
+            res.status(200).json(products);
+        } catch (error) {
+            next(error)
+        }
+    }
+
     async searchProducts(req, res, next) {
         try {
             const {query, cursor, limit} = req.query;
@@ -108,6 +118,15 @@ class ProductController {
             res.status(200).json({
                 categories: categoryList
             })
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async getNewArrivals({query: {limit}}, res, next) {
+        try {
+            const products = await productRepository.getNewArrivals(limit);
+            res.status(200).json({products})
         } catch (err) {
             next(err)
         }

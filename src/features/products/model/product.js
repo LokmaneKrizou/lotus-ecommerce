@@ -63,7 +63,11 @@ const productSchema = new mongoose.Schema({
     totalQuantity: {
         type: Number,
         min: 1
-    }
+    },
+    searchCount: {
+        type: Number,
+        default: 0,
+    },
 },{versionKey: false,});
 
 function colorsLimit(val) {

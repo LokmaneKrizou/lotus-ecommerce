@@ -8,6 +8,8 @@ router.get('/search', productController.searchProducts);
 router.get('/categories', productController.getCategories);
 router.get('/', productController.getAllProducts);
 router.post('/create',authMiddleware, productController.createProduct);
+router.get('/newArrivals', productController.getNewArrivals);
+router.get('/mostSearched', productController.getMostSearchedProducts);
 router.get('/:productId', productController.getProductById);
 router.put('/:productId',authMiddleware, authMiddleware, productController.updateProduct);
 router.delete('/:productId',authMiddleware, authMiddleware, productController.deleteProduct);
