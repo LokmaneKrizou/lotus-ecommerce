@@ -6,6 +6,8 @@ logs/
 temp/
 public/uploads/
 .idea/
+.DS_Store
+src/.DS_Store
 
 # Files
 .env
