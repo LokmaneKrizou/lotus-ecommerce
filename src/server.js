@@ -12,9 +12,14 @@ const dbConnection = require("./database");
 const validateRequestBody = require('./middleware/validateRequestBodyMiddleware')
 const dotenv = require("dotenv");
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const fs = require('fs');
+const https = require('https');
+const session = require("express-session");
 
 dotenv.config();
 const app = express();
+app.use(cookieParser());
 
 // Middlewares
 app.use(helmet());
@@ -23,22 +28,33 @@ app.use(bodyParser.json());
 // Connect to MongoDb
 dbConnection()
 
-// Apply request validator middleware to all POST requests
-app.post('*', validateRequestBody);
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {secure: true}
+}));
+
 // Enable CORS for all routes
 const allowedOrigins = [
+    'https://localhost:3001', // Your React app URL
     'http://localhost:3001', // Your React app URL
-    'http://192.168.1.38:3001',    // Another allowed origin
+    'http://192.168.1.82:3001',    // Another allowed origin
+    'https://localhost:3000', // Your React app URL
+    'http://localhost:3000', // Your React app URL
+    'http://192.168.1.82:3000',
+    'https://192.168.1.82:3000'
 ];
 
 const corsOptions = {
     origin: function (origin, callback) {
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
         }
     },
+    credentials: true,
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
@@ -48,15 +64,21 @@ app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
 app.use('/carts', cartRoutes);
-app.use('/etsy-integration', etsyRoutes);
-
+app.use('/etsy', etsyRoutes);
 // Error handling middleware
-app.use((err, res) => {
+app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(err.statusCode).send(err.message);
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).send(err.message);
 });
 // Start server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server started on port ${port}`);
+const PORT = process.env.PORT || 3000;
+const privateKeyPassphrase = 'kikinat2021'; // Replace with your actual passphrase
+const httpsOptions = {
+    key: fs.readFileSync('./key.pem', {encoding: 'utf8', flag: 'r'}),
+    passphrase: privateKeyPassphrase,
+    cert: fs.readFileSync('./cert.pem', {encoding: 'utf8', flag: 'r'}),
+};
+https.createServer(httpsOptions, app).listen(PORT, () => {
+    console.log(`Server running on https://localhost:${PORT}`);
 });

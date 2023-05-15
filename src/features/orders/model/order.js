@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Status = require('../enums/status');
-const ColorSchema=require('../../../common/model/color')
+const {ProductVariantOptionSchema} = require("../../products/model/variants");
 
 const orderSchema = new mongoose.Schema({
     user: {
@@ -14,13 +14,9 @@ const orderSchema = new mongoose.Schema({
             ref: 'Product',
             required: true
         },
-        color: {
-            type: ColorSchema,
+        variantSelections: {
+            type: [ProductVariantOptionSchema],
             required: false
-        },
-        size: {
-            type: String,
-            required: true
         },
         price: {
             type: Number,

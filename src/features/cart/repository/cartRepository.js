@@ -6,10 +6,15 @@ class CartRepository {
 
     async createCart(userId, cartItems) {
         try {
-            return await Cart.create({
+            const cart = await Cart.create({
                 user: userId,
                 items: cartItems
             });
+            return (await cart.populate(populateUserWithoutPassword))
+                .populate({
+                    path: "items.product",
+                    model: "Product",
+                });
         } catch (err) {
             if (err.code === 11000) {
                 throw new CartAlreadyExistsForUserException();
@@ -20,7 +25,12 @@ class CartRepository {
 
     async updateCart(cartId, cartData) {
         try {
-            const updatedCart = await Cart.findByIdAndUpdate(cartId, cartData, {new: true});
+            const updatedCart = await Cart.findByIdAndUpdate(cartId, cartData, {new: true})
+                .populate(populateUserWithoutPassword)
+                .populate({
+                    path: "items.product",
+                    model: "Product",
+                });
             if (!updatedCart) {
                 throw new CartNotFoundException(cartId);
             }
@@ -31,6 +41,14 @@ class CartRepository {
     }
 
     async getCartByUserId(userId) {
+        try {
+            return await Cart.findOne({user: userId});
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async getCartByUserIdWithPopulatedInfo(userId) {
         try {
             const cart = await Cart.findOne({user: userId})
                 .populate(populateUserWithoutPassword)
@@ -48,6 +66,18 @@ class CartRepository {
     }
 
     async getCartById(cartId) {
+        try {
+            const cart = await Cart.findById(cartId);
+            if (!cart) {
+                throw new CartNotFoundException(cartId);
+            }
+            return cart;
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async getCartByIdWithPopulatedInfo(cartId) {
         try {
             const cart = await Cart.findById(cartId)
                 .populate(populateUserWithoutPassword)

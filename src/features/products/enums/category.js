@@ -1,9 +1,9 @@
 const Category = Object.freeze({
-    GIRL_CLOTHES: "girl_clothes",
-    BOY_CLOTHES: "boy_clothes",
-    BABY_CLOTHES: "baby_clothes",
-    ACCESSORIES: "accessories",
-    OTHER: "other",
+    GIRL_CLOTHES: "Girl Clothes",
+    BOY_CLOTHES: "Boy Clothes",
+    BABY_CLOTHES: "Baby Clothes",
+    ACCESSORIES: "Accessories",
+    OTHER: "Other",
 });
 
 module.exports = Category;

@@ -1,40 +1,21 @@
-const redis = require('redis');
-const dotEnv = require('dotenv')
+const Redis = require('ioredis');
+const dotEnv = require('dotenv');
 
-dotEnv.config()
+dotEnv.config();
 
-const redisClient = async () => {
-    const client = redis.createClient({
-        password: process.env.REDIS_PASSWORD,
-        socket: {
-            host: process.env.REDIS_HOST,
-            port: process.env.REDIS_PORT
-        }
-    });
-    client.on('error', (err) => console.log('Redis Client Error', err));
-    client.on('end', () => console.log('Redis client disconnected'));
-    client.on('connect', function () {
-        console.log('redis client connected');
-    });
-    await client.connect()
+const redisClient = new Redis({
+    password: process.env.REDIS_PASSWORD,
+    host: process.env.REDIS_HOST,
+    port: parseInt(process.env.REDIS_PORT, 10),
+});
 
-    return client;
-}
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.on('end', () => console.log('Redis client disconnected'));
+redisClient.on('connect', function () {
+    console.log('redis client connected');
+});
+redisClient.on('ready', () => {
+    console.log('Redis client is ready');
+});
 
-const getCachedTokenFor = async (key) => {
-    try {
-        const client = await redisClient();
-        const data = await client.get(key);
-        if (data !== null) {
-            return JSON.parse(data).token;
-        } else {
-            return null;
-        }
-    } catch (err) {
-        throw err;
-    }
-}
-module.exports = {
-    redisClient,
-    getCachedTokenFor
-};
+module.exports = redisClient;

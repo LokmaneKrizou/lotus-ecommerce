@@ -5,6 +5,13 @@ const bcrypt = require("bcryptjs");
 const {BadRequestException} = require("../../../common/exceptions");
 
 class UserController {
+
+    constructor() {
+        this.webLogin = this.webLogin.bind(this);
+        this.mobileLogin = this.mobileLogin.bind(this);
+
+    }
+
     async signup(req, res, next) {
         try {
             const input = req.body
@@ -20,14 +27,45 @@ class UserController {
             const result = await UserRepository.createUser(user)
             res.json({status: 'success', message: `user with email ${result.email} signed up successfully.`})
         } catch (err) {
-            console.log(err)
+            // console.log(err)
             next(err)
         }
     }
 
-    async login(req, res, next) {
+    async mobileLogin(req, res, next) {
         try {
-            const {password, email} = req.body
+            const tokens = await this.login(req.body, next)
+            res.json({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken});
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async webLogin(req, res, next) {
+        try {
+            const tokens = await this.login(req.body, next)
+
+            res.cookie('accessToken', tokens.accessToken, {
+                httpOnly: false,
+                secure: true,
+                sameSite: 'lax',
+            });
+            res.cookie('refreshToken', tokens.refreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax',
+            });
+            const user = await UserRepository.getUserById(tokens.userId)
+
+            res.json({user: user});
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async login(body, next) {
+        try {
+            const {password, email} = body
             if (!password || !email) {
                 throw new BadRequestException(" missing parameter")
             }
@@ -37,10 +75,8 @@ class UserController {
                 throw new InvalidCredentialsException("Login failed, invalid credentials")
 
             }
-            const tokens = await TokenController.generateTokens(user.id)
-            res.json({...tokens});
+            return await TokenController.generateTokens(user.id)
         } catch (err) {
-            console.log(err)
             next(err)
         }
     }
@@ -49,7 +85,7 @@ class UserController {
         try {
             const userId = req.userId;
             const accessToken = req.headers.authorization.split(' ')[1];
-            await TokenController.deactivateTokens(userId, accessToken);
+            // await TokenController.deactivateTokens(userId, accessToken);
 
             res.json({message: " user logged out successfully"});
         } catch (err) {
@@ -89,6 +125,7 @@ class UserController {
             next(err);
         }
     }
+
     async getUsers(req, res, next) {
         try {
             const users = await UserRepository.getUsers()

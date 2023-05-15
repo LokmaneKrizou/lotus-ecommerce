@@ -8,7 +8,7 @@ const ColorSchema = new mongoose.Schema({
     },
     hexCode: {
         type: String,
-        required: true
+        required: false
     }
 }, {
     versionKey: false,

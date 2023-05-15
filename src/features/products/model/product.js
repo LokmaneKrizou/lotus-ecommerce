@@ -1,64 +1,37 @@
 const mongoose = require('mongoose');
 const Category = require('../enums/category');
-const ColorSchema = require('../../../common/model/color');
+const {Schema} = require("mongoose");
+const {VariantSchema, ProductVariantSchema} = require("./variants");
 
-const productSchema = new mongoose.Schema({
+const ProductSchema = new Schema({
     title: {
         type: String,
         required: true,
-        maxlength: 100
+        maxlength: 1000
     },
     description: {
         type: String,
         required: true,
-        maxlength: 3000
+        maxlength: 10000
     },
     category: {
         type: String,
         enum: Object.values(Category),
         required: true
     },
+    etsy_id: {
+        type: Number,
+        required: false,
+        min: 1
+    },
     price: {
         type: Number,
         required: true,
         min: 0
     },
-    colors: {
-        type: [ColorSchema],
-        validate: [colorsLimit, '{PATH} exceeds the limit of 5']
-    },
     images: {
         type: [String],
         required: true
-    },
-    colorImages: [{
-        color: {
-            type: ColorSchema
-        },
-        image: {
-            type: String
-        },
-        _id: false
-    }
-    ],
-    sizes: {
-        type: [String]
-    },
-    quantities: {
-        type: [{
-            size: {
-                type: String,
-                enum: this.sizes,
-                required: true
-            },
-            quantity: {
-                type: Number,
-                min: 0,
-                required: true
-            }
-        }],
-        _id: false,
-        unique: true, // set a unique index on the `size` field
     },
     totalQuantity: {
         type: Number,
@@ -68,12 +41,16 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-},{versionKey: false,});
+    variants: {
+        type: [VariantSchema],
+        required: false,
+    },
+    productVariants: {
+        type: [ProductVariantSchema],
+        required: false
+    }
+}, {versionKey: false,});
 
-function colorsLimit(val) {
-    return val.length <= 5;
-}
-
-const Product = mongoose.model('Product', productSchema);
+const Product = mongoose.model('Product', ProductSchema);
 
 module.exports = Product;

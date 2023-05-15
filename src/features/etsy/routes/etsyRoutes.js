@@ -1,13 +1,9 @@
 const express = require('express');
+const etsyController = require('../controller/etsyControllers');
+
 const router = express.Router();
-const etsyAuth = require('../integration/etsyIntegration');
-const { authenticate } = require('../controller/etsyControllers');
 
-router.get('/auth', (req, res) => {
-    const uri = etsyAuth.code.getUri();
-    res.redirect(uri);
-});
-
-router.get('/callback', authenticate);
-
+router.get('/oauth', etsyController.startOAuthFlow);
+router.get('/callback', etsyController.handleOAuthCallback);
+router.get('/refresh', etsyController.refreshToken);
 module.exports = router;
