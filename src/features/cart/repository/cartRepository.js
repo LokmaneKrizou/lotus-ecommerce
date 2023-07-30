@@ -95,6 +95,7 @@ class CartRepository {
     }
 
     async deleteCart(cartId) {
+        console.log(cartId)
         const deletedCart = await Cart.findByIdAndDelete(cartId);
         if (!deletedCart) {
             throw new CartNotFoundException(cartId);

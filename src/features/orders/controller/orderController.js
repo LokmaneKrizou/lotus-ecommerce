@@ -1,18 +1,51 @@
 const orderRepository = require("../repository/orderRepository");
 const {InvalidOrderBodyException} = require("../exceptions");
+const productRepository = require("../../products/repository/productRepository")
 const {base64ToString, stringToBase64} = require("../../../common/utils/base64");
+const UserRepository = require("../../users/repository/userRepository");
+const {CANCELLED} = require("../enums/status");
 
 class OrderController {
     async createOrder(req, res, next) {
         try {
-            const userId = req.userId
-            const {items} = req.body;
-            if (!userId || !Array.isArray(items) || items.length === 0) {
+            const userId = req.userId || null;
+            const {items, receiver, defaultAddress} = req.body;
+
+            if (!Array.isArray(items) || items.length === 0) {
                 throw new InvalidOrderBodyException(
                     "Invalid order body. Order must contain a valid userId and at least one product"
                 );
             }
-            const newOrder = {user: userId, ...req.body}
+            let totalPrice = 0
+            for (const item of items) {
+                let product = await productRepository.getProductById(item.product);
+                totalPrice += item.price*item.quantity;
+                if (item.variantSelections) {
+                    for (let i = 0; i < product.productVariants.length; i++) {
+                        const variant = product.productVariants[i];
+                        if (variant.options.every(option =>
+                            item.variantSelections.some(selection =>
+                                selection.name === option.name && selection.value === option.value))) {
+                            if (variant.quantity < item.quantity) {
+                                throw new Error("Insufficient stock for variant " + JSON.stringify(item.variantSelections));
+                            }
+                            product.productVariants[i].quantity -= item.quantity;
+                        }
+                    }
+                }
+                if (product.totalQuantity < item.quantity) {
+                    throw new Error("Insufficient stock for product ID " + item.product + " with variant:" + JSON.stringify(item.variantSelections));
+                }
+                product.totalQuantity -= item.quantity;
+
+                await productRepository.updateProduct(item.product, product);
+            }
+            if (defaultAddress) {
+                const address = receiver.address
+                await UserRepository.updateUser(userId, {address})
+            }
+            // Create order
+            const newOrder = {user: userId, receiver: receiver, items: items, totalPrice: totalPrice};
             const order = await orderRepository.createOrder(newOrder);
             res.status(201).json({
                 success: true,
@@ -34,6 +67,44 @@ class OrderController {
             }
             const order = await orderRepository.getOrderById(orderId);
             res.status(200).json({success: true, data: order});
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async cancelOrder(req, res, next) {
+        try {
+            const orderId = req.params.orderId;
+            if (!orderId) {
+                throw new InvalidOrderBodyException(
+                    "Order ID param is not passed correctly."
+                );
+            }
+            const order = await orderRepository.getOrderById(orderId);
+            const items = order.items;
+
+            for (const item of items) {
+                let product = await productRepository.getProductById(item.product);
+                if (item.variantSelections) {
+                    for (let i = 0; i < product.productVariants.length; i++) {
+                        const variant = product.productVariants[i];
+                        if (variant.options.every(option =>
+                            item.variantSelections.some(selection =>
+                                selection.name === option.name && selection.value === option.value))) {
+
+                            // Add the item quantity back to the variant quantity
+                            product.productVariants[i].quantity += item.quantity;
+                        }
+                    }
+                }
+                product.totalQuantity += item.quantity;
+                await productRepository.updateProduct(item.product, product);
+            }
+            await orderRepository.updateOrder(orderId, {status: CANCELLED});
+            res.status(200).json({
+                success: true,
+                message: "Order updated successfully"
+            });
         } catch (err) {
             next(err);
         }
@@ -90,7 +161,7 @@ class OrderController {
         }
     }
 
-    async getMyOrder({userId}, res, next) {
+    async getMyOrders({userId}, res, next) {
         try {
             if (!userId) {
                 throw new InvalidOrderBodyException("Missing or invalid user ID.");

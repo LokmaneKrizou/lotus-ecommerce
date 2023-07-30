@@ -142,7 +142,7 @@ class CartController {
         }
     }
 
-    async deleteCart({params: cartId}, res, next) {
+    async deleteCart({params: {cartId}}, res, next) {
         try {
             if (!cartId) {
                 throw new BadRequestException("we need cart id to perform this action")

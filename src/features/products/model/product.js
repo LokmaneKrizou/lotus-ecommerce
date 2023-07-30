@@ -49,7 +49,10 @@ const ProductSchema = new Schema({
         type: [ProductVariantSchema],
         required: false
     }
-}, {versionKey: false,});
+}, {
+    versionKey: false,
+    timestamps: true
+});
 
 const Product = mongoose.model('Product', ProductSchema);
 

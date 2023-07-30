@@ -15,8 +15,8 @@ class UserController {
     async signup(req, res, next) {
         try {
             const input = req.body
-            const {password, email, firstName, lastName, address, phone} = input;
-            if (!password || !email || !firstName || !lastName || !address || !phone) {
+            const {password, email, firstName, lastName, phone} = input;
+            if (!password || !email || !firstName || !lastName || !phone) {
                 next(new BadRequestException(" missing parameter"))
             }
             const hashedPassword = await bcrypt.hash(password, 12);
@@ -85,8 +85,17 @@ class UserController {
         try {
             const userId = req.userId;
             const accessToken = req.headers.authorization.split(' ')[1];
-            // await TokenController.deactivateTokens(userId, accessToken);
-
+            await TokenController.deactivateTokens(userId, accessToken);
+            res.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            });
+            res.clearCookie('accessToken', {
+                httpOnly: false,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            });
             res.json({message: " user logged out successfully"});
         } catch (err) {
             next(err)
@@ -99,6 +108,16 @@ class UserController {
             const accessToken = req.headers.authorization.split(' ')[1]
             await TokenController.deactivateTokens(userId, accessToken);
             await UserRepository.deleteUser(userId);
+            res.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            });
+            res.clearCookie('accessToken', {
+                httpOnly: false,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            });
             res.json({message: " user deleted successfully"});
         } catch (err) {
             next(err);
@@ -121,6 +140,31 @@ class UserController {
             const userId = req.userId;
             const user = await UserRepository.updateUser(userId, updatedUser)
             res.json({...user});
+        } catch (err) {
+            next(err);
+        }
+    }
+    async changePassword(req, res, next) {
+        try {
+            const {newPassword, currentPassword} = req.body
+            const userId = req.userId;
+
+            // Fetch the user
+            const user = await UserRepository.getUserByIdWithPassword(userId)
+
+            // Check if current password matches
+            const isPasswordCorrect = await bcrypt.compare(currentPassword, user.password)
+            if (!isPasswordCorrect) {
+                throw new InvalidCredentialsException("Current password is incorrect");
+            }
+
+            // Hash the new password
+            const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+            // Update the user's password
+            const updatedUser = await UserRepository.updateUser(userId, { password: hashedPassword })
+
+            res.json({message: "Password updated successfully"});
         } catch (err) {
             next(err);
         }

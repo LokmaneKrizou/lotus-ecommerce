@@ -1,9 +1,6 @@
 const jwt = require('jsonwebtoken');
 const TokenRepository = require('../repository/tokenRepository');
 const {BadRequestException} = require('../../../common/exceptions');
-const ms = require("ms");
-const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION || '7 days';
-const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION || '1h';
 
 class TokenController {
     constructor() {

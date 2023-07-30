@@ -40,6 +40,7 @@ const allowedOrigins = [
     'https://localhost:3001', // Your React app URL
     'http://localhost:3001', // Your React app URL
     'http://192.168.1.82:3001',    // Another allowed origin
+    'https://192.168.1.82:3001',
     'https://localhost:3000', // Your React app URL
     'http://localhost:3000', // Your React app URL
     'http://192.168.1.82:3000',
@@ -73,10 +74,8 @@ app.use((err, req, res, next) => {
 });
 // Start server
 const PORT = process.env.PORT || 3000;
-const privateKeyPassphrase = 'kikinat2021'; // Replace with your actual passphrase
 const httpsOptions = {
     key: fs.readFileSync('./key.pem', {encoding: 'utf8', flag: 'r'}),
-    passphrase: privateKeyPassphrase,
     cert: fs.readFileSync('./cert.pem', {encoding: 'utf8', flag: 'r'}),
 };
 https.createServer(httpsOptions, app).listen(PORT, () => {

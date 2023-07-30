@@ -9,5 +9,5 @@ router.get('/', userController.getUsers);
 router.get('/me', userController.getUser);
 router.put('/me', userController.updateUser);
 router.delete('/me', userController.deleteUser);
-
+router.put('/me/password', userController.changePassword);
 module.exports = router;

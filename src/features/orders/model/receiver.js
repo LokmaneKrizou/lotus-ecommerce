@@ -1,7 +1,7 @@
+const AddressSchema = require("../../users/model/address");
 const mongoose = require('mongoose');
-const Role = require('../enums/role');
-const AddressSchema = require('./address');
-const userSchema = new mongoose.Schema({
+
+const ReceiverSchema = new mongoose.Schema({
     firstName: {
         type: String,
         required: true,
@@ -17,14 +17,9 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique: true,
         trim: true,
+        unique:false,
         lowercase: true
-    },
-    password: {
-        type: String,
-        required: true,
-        minlength: 6
     },
     phone: {
         type: String,
@@ -35,15 +30,12 @@ const userSchema = new mongoose.Schema({
     },
     address: {
         type: AddressSchema,
-        required: false
+        required: true
     },
-    role: {
+    deliveryInstructions: {
         type: String,
-        enum: Object.values(Role),
-        default: Role.CUSTOMER
+        required: false
     }
 });
 
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+module.exports = ReceiverSchema;

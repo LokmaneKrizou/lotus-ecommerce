@@ -2,6 +2,7 @@ const productRepository = require('../repository/productRepository');
 const {stringToBase64, base64ToString} = require('../../../common/utils/base64')
 const {InvalidProductBodyException} = require("../exceptions");
 const Category = require("../enums/category");
+const redisClient = require("../../../cache");
 const Product = require("../model/product");
 
 class ProductController {
@@ -70,21 +71,79 @@ class ProductController {
     async searchProducts(req, res, next) {
         try {
             const {query, cursor, limit} = req.query;
-            const queryObject = query ? {title: {$regex: new RegExp(`\\b${query}\\b`, 'i')}} : {};
-            const decodedCursor = cursor ? base64ToString(cursor) : null
+
+            const regexPattern = new RegExp(`\\b(${query})\\b`, 'i');
+
+            const queryObject = query ? {
+                $or: [
+                    {title: {$regex: regexPattern}},
+                    {description: {$regex: regexPattern}},
+                    {'variants.name': {$regex: regexPattern}},
+                    {'variants.options.value': {$regex: regexPattern}}
+                ]
+            } : {};
+
+            // Cache Key
+            const cacheKey = cursor ? `search:${query}:${cursor}:${limit}` : `search:${query}:${limit}`;
+
+            // Try getting data from Redis cache
+            const cacheData = await redisClient.get(cacheKey);
+            if (cacheData) {
+                return res.status(200).json(JSON.parse(cacheData));
+            }
+
+            // If no cache, proceed with search
+            const decodedCursor = cursor ? base64ToString(cursor) : null;
             const products = await productRepository.searchProducts(queryObject, decodedCursor, parseInt(limit));
             const hasNextPage = products.length > limit;
             if (hasNextPage) {
                 products.pop();
             }
             const endCursor = hasNextPage ? stringToBase64(products[products.length - 1]._id) : null;
-            res.status(200).json({
+
+            // Prepare response
+            const response = {
                 products,
                 pageInfo: {
                     endCursor: endCursor,
                     hasNextPage,
                 },
-            });
+            };
+
+            // Cache the data in Redis with an expiry time (for example, 10 minutes = 600 seconds)
+            await redisClient.set(cacheKey, JSON.stringify(response), 'EX', 600);
+
+            return res.status(200).json(response);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getSuggestions(req, res, next) {
+        try {
+            const {query} = req.query;
+
+            // Convert to regex and create a pattern that will search for any match in the title
+            const regex = new RegExp(`^${query}`, 'i');
+            const queryObject = {title: regex};
+
+            // Cache Key
+            const cacheKey = `suggestions:${query}`;
+
+            // Try getting data from Redis cache
+            const cacheData = await redisClient.get(cacheKey);
+            if (cacheData) {
+                return res.status(200).json(JSON.parse(cacheData));
+            }
+
+            // If no cache, proceed with search
+            const products = await productRepository.searchProducts(queryObject, null, 5);
+            const suggestions = products.map(product => product.title);
+
+            // Cache the data in Redis with an expiry time (for example, 10 minutes = 600 seconds)
+            await redisClient.set(cacheKey, JSON.stringify(suggestions), 'EX', 600);
+
+            return res.status(200).json(suggestions);
         } catch (err) {
             next(err);
         }

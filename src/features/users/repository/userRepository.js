@@ -17,7 +17,13 @@ class UserRepository {
             throw err;
         }
     }
-
+    async getUserByIdWithPassword(userId) {
+        const user = await User.findOne({_id: userId}).select('-__v');
+        if (!user) {
+            throw new UserNotFoundException(userId);
+        }
+        return user.toObject();
+    }
     async getUserById(userId) {
         const user = await User.findOne({_id: userId}).select('-password -__v');
         if (!user) {
